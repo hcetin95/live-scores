@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-25T21:52:46+00:00",
+ "updated": "2026-11-25T22:50:21+00:00",
  "items": {
   "401882802": {
    "title": "LEVANTE UD 1 - 1 ELCHE CF | RESUMEN LALIGA EA SPORTS",
@@ -224,6 +224,48 @@
    "published": "2026-11-25T19:59:43Z",
    "channel": "CBS Sports Golazo",
    "kick": "2026-11-25T17:45Z"
+  },
+  "401915291": {
+   "title": "Atlético Madrid vs. Viking: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=fKHaVNAFF3Q",
+   "published": "2026-11-25T22:23:01Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T20:00Z"
+  },
+  "401915292": {
+   "title": "Club Brugge vs. Liverpool: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=dPKUyRLmsE8",
+   "published": "2026-11-25T22:14:18Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T20:00Z"
+  },
+  "401915376": {
+   "title": "Inter vs. Stuttgart: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=xGf_6QHCV6c",
+   "published": "2026-11-25T22:11:33Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T20:00Z"
+  },
+  "401915377": {
+   "title": "Lille vs. Bayern Munich: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=OG4sayZy7B0",
+   "published": "2026-11-25T22:22:59Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T20:00Z"
+  },
+  "401915374": {
+   "title": "PSG vs. Roma: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=drhloSGnTXg",
+   "published": "2026-11-25T22:23:47Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T20:00Z"
+  },
+  "401915373": {
+   "title": "Sporting CP vs. Man. United: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=rD373w7hmUk",
+   "published": "2026-11-25T22:26:13Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T20:00Z"
   }
  },
  "matchday": {
@@ -247,8 +289,7 @@
   "Fenerbahce": "UCgqlho3-8a6FmDqQm7Q6gJw"
  },
  "pending": [
-  "Atlético Madrid v Viking FK",
-  "Lille v Bayern Munich",
+  "Shakhtar Donetsk v Fenerbahce",
   "Bodo/Glimt v LASK Linz",
   "Werder Bremen v Hamburg SV",
   "Erzurum BB v Goztepe"
