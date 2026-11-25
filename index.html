@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="robots" content="noindex">
+<title>Live Scores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Broadcast scoreboard: dark masthead, league strips, one card per match; match sheet slides over. */
+:root{
+  --bg:#0b0f14; --panel:#141a22; --panel2:#1b2330; --line:#263142; --fg:#eef2f7; --muted:#8f9bad;
+  --live:#ff3b3b; --gold:#e8b931; --win:#3ddc84; --link:#6cb6ff;
+  --f-score:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-ui:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:15px}
+body{padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.mast{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:12px 8px}
+h1{font-family:var(--f-score);font-size:1.7rem;letter-spacing:.02em;margin:0;text-transform:uppercase}
+h1 b{color:var(--live)}
+.upd{font-size:.75rem;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.upd .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:5px;vertical-align:1px}
+.upd.on .dot{background:var(--live);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.days,.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.chip{flex:none;font:600 .8rem var(--f-ui);color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{color:#0b0f14;background:var(--fg);border-color:var(--fg)}
+main{padding-block:12px 40px;display:flex;flex-direction:column;gap:16px}
+.league h2{font:700 .78rem var(--f-ui);letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+.league h2 i{width:4px;height:14px;border-radius:2px;background:var(--c,#888)}
+.card{display:grid;grid-template-columns:58px 1fr auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;width:100%;text-align:left;color:inherit;font:inherit}
+.card:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.card.mine{border-color:#4a3d12;background:linear-gradient(90deg,rgba(232,185,49,.10),var(--panel) 40%)}
+.st{font:700 .95rem var(--f-score);color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.st.live{color:var(--live)}
+.teams{display:flex;flex-direction:column;gap:4px;min-width:0}
+.row{display:flex;align-items:center;gap:8px;min-width:0}
+.row img{width:20px;height:20px;object-fit:contain;flex:none}
+.row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.w span{font-weight:600}
+.sc{display:flex;flex-direction:column;gap:4px;font:700 1.25rem/20px var(--f-score);text-align:right;font-variant-numeric:tabular-nums}
+.hl{grid-column:2/4;font-size:.8rem;color:var(--link);text-decoration:none;display:inline-flex;gap:6px;align-items:center}
+.empty,.err{color:var(--muted);text-align:center;padding:30px 10px}
+.err{color:#ffb4b4}
+/* match sheet */
+.sheet{position:fixed;inset:0;z-index:10;background:var(--bg);overflow-y:auto;padding-top:env(safe-area-inset-top,0px)}
+.sheet .bar{display:flex;align-items:center;gap:10px;padding-block:12px}
+.back{font:600 .9rem var(--f-ui);background:none;border:0;color:var(--link);cursor:pointer;padding:6px 0}
+.big{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;text-align:center;padding:10px 0 4px}
+.big img{width:46px;height:46px;object-fit:contain}
+.big .nm{font-weight:600;margin-top:6px}
+.big .score{font:700 2.8rem/1 var(--f-score);font-variant-numeric:tabular-nums}
+.big .clk{font:700 1rem var(--f-score);color:var(--muted);margin-top:4px}
+.big .clk.live{color:var(--live)}
+.watch{display:block;text-align:center;margin:10px auto;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--fg);text-decoration:none;font-weight:600}
+.watch b{color:var(--live)}
+.tabs{display:flex;gap:6px;margin:12px 0}
+.ev{display:grid;grid-template-columns:1fr 46px 1fr;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)}
+.ev .m{font:700 .95rem var(--f-score);text-align:center;color:var(--muted)}
+.ev .h{text-align:right}
+.ev small{display:block;color:var(--muted);font-size:.78rem}
+.ht{text-align:center;color:var(--muted);font:700 .8rem var(--f-score);letter-spacing:.1em;padding:8px 0}
+.lu{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lu h3{font-size:.8rem;color:var(--muted);margin:0 0 6px;font-weight:600}
+.lu ol{list-style:none;margin:0;padding:0;font-size:.88rem;display:flex;flex-direction:column;gap:4px}
+.lu li span{color:var(--muted);display:inline-block;width:24px;font-variant-numeric:tabular-nums}
+.note{color:var(--muted);font-size:.75rem;text-align:center;padding:20px 0}
+@media (prefers-reduced-motion:reduce){.upd.on .dot{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="mast"><h1><b>●</b> Live Scores</h1><div class="upd" id="upd"><span class="dot"></span><span id="updt">Loading…</span></div></div>
+    <div class="days" id="days" role="tablist" aria-label="Day"></div>
+    <div class="filters" id="filters" aria-label="Filter"></div>
+  </div>
+</header>
+<main class="wrap" id="list" aria-live="polite"><p class="empty">Loading scores…</p></main>
+<div class="sheet" id="sheet" hidden></div>
+
+<script>
+"use strict";
+const API = "https://site.api.espn.com/apis/site/v2/sports/soccer";
+const LEAGUES = [
+  {slug:"uefa.champions", name:"Champions League", c:"#1d4ed8", watch:"Paramount+ ✓"},
+  {slug:"eng.1", name:"Premier League", c:"#7c3aed", watch:"Peacock ✓"},
+  {slug:"esp.1", name:"La Liga", c:"#ef4444", watch:"ESPN+"},
+  {slug:"ita.1", name:"Serie A", c:"#0ea5e9", watch:"Paramount+ ✓"},
+  {slug:"ger.1", name:"Bundesliga", c:"#dc2626", watch:"Fandango (USA Network) ✓"},
+  {slug:"fra.1", name:"Ligue 1", c:"#22c55e", watch:"beIN SPORTS"},
+  {slug:"tur.1", name:"Süper Lig", c:"#f59e0b", watch:"Sling (Turkish) ✓"},
+];
+const MINE = ["fenerbah","liverpool","real madrid","paris saint-germain","psg","manchester city","man city"];
+const fold = s => (s||"").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g,"");
+const isMine = (...n) => n.some(x => MINE.some(t => fold(x).includes(t)));
+
+let day = 0, filter = "all", data = {}, highlights = {}, timer = null, lastOk = null, openEvent = null;
+
+function el(tag, cls, text){const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e;}
+function ymd(off){const d=new Date(); d.setDate(d.getDate()+off); return d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");}
+function dayLabel(off){ if(off===0) return "Today"; if(off===-1) return "Yesterday"; if(off===1) return "Tomorrow";
+  const d=new Date(); d.setDate(d.getDate()+off); return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}); }
+function kick(iso){return new Date(iso).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});}
+function safeUrl(u){return typeof u==="string" && u.startsWith("https://") ? u : null;}
+
+function statusOf(comp){
+  const st = comp.status||{}, t = st.type||{};
+  if(t.state==="in"){ const ht = t.name==="STATUS_HALFTIME"; return {live:true, txt: ht?"HT":(st.displayClock||t.shortDetail||"LIVE")}; }
+  if(t.state==="post"){ return {done:true, txt: t.name==="STATUS_POSTPONED"?"PPD":(t.shortDetail==="FT-Pens"?"PENS":(t.shortDetail||"FT"))}; }
+  return {txt: kick(comp.date)};
+}
+
+function buildChips(){
+  const days = document.getElementById("days"); days.replaceChildren();
+  for(const off of [-2,-1,0,1,2]){
+    const b=el("button","chip",dayLabel(off)); b.type="button"; b.setAttribute("aria-pressed", String(off===day));
+    b.onclick=()=>{ day=off; buildChips(); refresh(true); }; days.append(b);
+  }
+  const f = document.getElementById("filters"); f.replaceChildren();
+  for(const [k,label] of [["all","All"],["mine","My teams"],["live","Live now"]]){
+    const b=el("button","chip",label); b.type="button"; b.setAttribute("aria-pressed", String(filter===k));
+    b.onclick=()=>{ filter=k; buildChips(); render(); }; f.append(b);
+  }
+}
+
+async function getJSON(url){
+  const ctl = new AbortController(); const t=setTimeout(()=>ctl.abort(), 12000);
+  try{ const r = await fetch(url, {signal:ctl.signal, cache:"no-store"}); if(!r.ok) throw new Error(r.status); return await r.json(); }
+  finally{ clearTimeout(t); }
+}
+
+async function loadHighlights(){
+  try{ const r = await fetch("highlights.json?ts="+Date.now(), {cache:"no-store"}); if(r.ok){ const j = await r.json(); highlights = j.items||{}; } }catch(e){}
+}
+
+async function refresh(showLoading){
+  clearTimeout(timer);
+  if(showLoading) document.getElementById("list").replaceChildren(el("p","empty","Loading scores…"));
+  const d = ymd(day);
+  const results = await Promise.allSettled(LEAGUES.map(l => getJSON(`${API}/${l.slug}/scoreboard?dates=${d}`)));
+  const fresh = {}; let ok = 0;
+  results.forEach((r,i)=>{ if(r.status==="fulfilled"){ ok++; fresh[LEAGUES[i].slug] = r.value.events||[]; } else fresh[LEAGUES[i].slug] = (data[LEAGUES[i].slug]||[]); });
+  data = fresh;
+  if(ok) lastOk = new Date();
+  await loadHighlights();
+  render(ok===0);
+  if(openEvent) loadDetail(openEvent.slug, openEvent.id, true);
+  schedule();
+}
+
+function anyLive(){ return Object.values(data).some(evs => evs.some(e => ((e.competitions||[{}])[0].status||{}).type?.state==="in")); }
+
+function schedule(){
+  if(document.hidden) return;
+  const ms = anyLive() ? 30000 : (day===0 ? 180000 : 600000);
+  timer = setTimeout(()=>refresh(false), ms);
+  const u=document.getElementById("upd"); u.classList.toggle("on", anyLive());
+  document.getElementById("updt").textContent = lastOk ? `Updated ${lastOk.toLocaleTimeString([], {hour:"numeric",minute:"2-digit",second:"2-digit"})} · every ${ms/1000>=60? ms/60000+" min": ms/1000+" s"}` : "Offline";
+}
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) refresh(false); else clearTimeout(timer); });
+
+function teamRow(c, winner){
+  const r = el("div","row"+(winner?" w":""));
+  const logo = safeUrl(c.team?.logo);
+  if(logo){ const i=new Image(); i.src=logo; i.alt=""; i.loading="lazy"; r.append(i); }
+  r.append(el("span",null,c.team?.shortDisplayName||c.team?.displayName||"TBD"));
+  return r;
+}
+
+function render(failed){
+  const list = document.getElementById("list"); list.replaceChildren();
+  if(failed && !Object.values(data).some(x=>x.length)){ list.append(el("p","err","Couldn't reach the live scores. Check your connection; it retries automatically.")); return; }
+  let shown = 0;
+  for(const L of LEAGUES){
+    let evs = (data[L.slug]||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+    evs = evs.filter(e=>{
+      const comp=(e.competitions||[{}])[0], cs=comp.competitors||[];
+      if(filter==="mine") return isMine(...cs.map(c=>c.team?.displayName||""));
+      if(filter==="live") return comp.status?.type?.state==="in";
+      return true;
+    });
+    if(!evs.length) continue;
+    const sec = el("section","league"); sec.style.setProperty("--c", L.c);
+    const h = el("h2"); h.append(el("i"), document.createTextNode(L.name)); sec.append(h);
+    for(const e of evs){ sec.append(card(e, L)); shown++; }
+    list.append(sec);
+  }
+  if(!shown) list.append(el("p","empty", filter==="live" ? "No games live right now." : filter==="mine" ? "None of your teams play on this day." : "No games on this day."));
+  list.append(el("p","note","Scores: ESPN, refreshed every 30 s during live games. Highlights: official YouTube channels, checked hourly."));
+}
+
+function card(e, L){
+  const comp=(e.competitions||[{}])[0], cs=comp.competitors||[];
+  const home=cs.find(c=>c.homeAway==="home")||cs[0]||{}, away=cs.find(c=>c.homeAway==="away")||cs[1]||{};
+  const s=statusOf(comp);
+  const b=el("button","card"+(isMine(home.team?.displayName, away.team?.displayName)?" mine":"")); b.type="button";
+  b.append(el("div","st"+(s.live?" live":""), s.live?"● "+s.txt:s.txt));
+  const t=el("div","teams"); t.append(teamRow(home, home.winner), teamRow(away, away.winner)); b.append(t);
+  const sc=el("div","sc");
+  if(s.live||s.done){ sc.append(el("span",null,home.score??""), el("span",null,away.score??"")); }
+  b.append(sc);
+  const hl = highlights[e.id];
+  if(hl && safeUrl(hl.url)){ const a=el("a","hl","▶ Highlights · "+(hl.channel||"YouTube")); a.href=hl.url; a.target="_blank"; a.rel="noopener"; a.onclick=ev=>ev.stopPropagation(); b.append(a); }
+  b.onclick=()=>openSheet(e, L);
+  return b;
+}
+
+/* ---- match sheet ---- */
+let sheetTab = "events";
+function openSheet(e, L){
+  openEvent = {slug:L.slug, id:e.id, e, L}; sheetTab="events";
+  const sh=document.getElementById("sheet"); sh.hidden=false; document.body.style.overflow="hidden";
+  history.pushState({sheet:1}, "", "#m"+e.id);
+  drawSheet(null); loadDetail(L.slug, e.id, false);
+}
+function closeSheet(){ openEvent=null; const sh=document.getElementById("sheet"); sh.hidden=true; sh.replaceChildren(); document.body.style.overflow=""; }
+window.addEventListener("popstate", ()=>{ if(openEvent) closeSheet(); });
+
+async function loadDetail(slug, id, quiet){
+  try{ const d = await getJSON(`${API}/${slug}/summary?event=${id}`); if(openEvent && openEvent.id===id){ openEvent.detail=d; drawSheet(d); } }
+  catch(err){ if(!quiet && openEvent) drawSheet(null, true); }
+}
+
+function kind(t){ t=fold(t);
+  if(t.includes("own goal")) return "og";
+  if(t.includes("penalty") && (t.includes("scored")||t.includes("goal")) && !t.includes("missed") && !t.includes("saved")) return "pen";
+  if(t.includes("goal")) return "goal";
+  if(t.includes("red card")||t.includes("second yellow")) return "rc";
+  if(t.includes("yellow")) return "yc";
+  if(t.includes("substitution")) return "sub";
+  return null; }
+const ICON = {goal:"⚽", pen:"⚽ (pen)", og:"⚽ (OG)", yc:"🟨", rc:"🟥", sub:"⇄"};
+
+function drawSheet(d, failed){
+  const {e, L} = openEvent; const sh=document.getElementById("sheet"); sh.replaceChildren();
+  const w=el("div","wrap");
+  const bar=el("div","bar"); const back=el("button","back","‹ Scores"); back.type="button"; back.onclick=()=>history.back(); bar.append(back, el("span","upd",L.name)); w.append(bar);
+  const sbComp = (e.competitions||[{}])[0];
+  const hdComp = d ? ((d.header?.competitions||[])[0]||{}) : {};
+  const comp = (hdComp.competitors||[]).length ? hdComp : sbComp;
+  const cs = comp.competitors||[]; const home=cs.find(c=>c.homeAway==="home")||{}, away=cs.find(c=>c.homeAway==="away")||{};
+  const s=statusOf(comp.status?comp:(e.competitions||[{}])[0]);
+  const big=el("div","big");
+  const side=c=>{const x=el("div"); const l=safeUrl(c.team?.logo||(c.team?.logos||[])[0]?.href); if(l){const i=new Image(); i.src=l; i.alt=""; x.append(i);} x.append(el("div","nm",c.team?.displayName||"")); return x;};
+  const mid=el("div"); mid.append(el("div","score", (s.live||s.done)?`${home.score??0} – ${away.score??0}`:"vs"), el("div","clk"+(s.live?" live":""), s.live?"● "+s.txt:s.txt));
+  big.append(side(home), mid, side(away)); w.append(big);
+  const hl=highlights[e.id];
+  if(hl && safeUrl(hl.url)){ const a=el("a","watch"); a.href=hl.url; a.target="_blank"; a.rel="noopener"; a.append(el("b",null,"▶ "), document.createTextNode("Watch highlights · "+(hl.channel||"YouTube"))); w.append(a); }
+  else if(s.done){ w.append(el("p","note","Highlights aren't on YouTube yet. Checked every hour.")); }
+  else w.append(el("p","note","Where to watch: "+L.watch));
+  if(failed){ w.append(el("p","err","Couldn't load match details.")); sh.append(w); return; }
+  if(!d){ w.append(el("p","empty","Loading match details…")); sh.append(w); return; }
+
+  const tabs=el("div","tabs");
+  for(const [k,label] of [["events","Goals & events"],["lineups","Lineups"]]){ const b=el("button","chip",label); b.type="button"; b.setAttribute("aria-pressed", String(sheetTab===k)); b.onclick=()=>{sheetTab=k; drawSheet(d);}; tabs.append(b); }
+  w.append(tabs);
+  const homeId = String(home.team?.id||home.id||"");
+  if(sheetTab==="events"){
+    const evs=(d.keyEvents||[]).map(x=>({x, k:kind(x.type?.text||"")})).filter(o=>o.k);
+    if(!evs.length) w.append(el("p","empty", s.live||s.done ? "No goals or cards yet." : "The match hasn't started."));
+    let htShown=false;
+    for(const {x,k} of evs){
+      const min=(x.clock?.displayValue||"").trim(); const n=parseInt(min,10);
+      if(!htShown && n>45 && !min.startsWith("45")){ w.append(el("div","ht","HALF-TIME")); htShown=true; }
+      const names=(x.participants||[]).map(p=>p.athlete?.displayName).filter(Boolean);
+      const isHome = String(x.team?.id||"")===homeId;
+      const cell=el("div"); cell.append(document.createTextNode(`${ICON[k]} ${names[0]||""}`));
+      if(k==="goal"||k==="pen"){ const m=/Assisted by ([^.]+?)(?: with [^.]*)?\./i.exec(x.text||""); const a=m?m[1].trim():(names[1]||""); if(a && a!==names[0]) cell.append(el("small",null,"Assist: "+a)); }
+      if(k==="sub" && names[1]) cell.append(el("small",null,"Off: "+names[1]));
+      const row=el("div","ev"); const l=el("div","h"), r=el("div");
+      (isHome?l:r).append(cell); row.append(l, el("div","m",min), r); w.append(row);
+    }
+  } else {
+    const lu=el("div","lu");
+    for(const side of ["home","away"]){
+      const r=(d.rosters||[]).find(x=>x.homeAway===side); const col=el("div");
+      if(!r){ col.append(el("p","empty","Not announced yet.")); lu.append(col); continue; }
+      col.append(el("h3",null,`${r.team?.shortDisplayName||r.team?.displayName||""}${r.formation?" · "+r.formation:""}`));
+      const xi=el("ol"), bench=el("ol");
+      for(const p of r.roster||[]){
+        const li=el("li"); li.append(el("span",null,p.jersey||""), document.createTextNode((p.athlete?.displayName||"")+(p.subbedOut?" ↓":"")+(p.subbedIn?" ↑":"")));
+        (p.starter?xi:bench).append(li);
+      }
+      col.append(xi); if(bench.children.length){ col.append(el("h3",null,"Bench")); col.append(bench); }
+      lu.append(col);
+    }
+    w.append(lu);
+  }
+  sh.append(w);
+}
+
+buildChips(); refresh(true);
+</script>
+</body>
+</html>
