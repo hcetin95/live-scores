@@ -1,0 +1,65 @@
+name: Live board (site + hourly highlights)
+
+on:
+  schedule:
+    - cron: "7 * * * *"      # hourly: look for new YouTube highlights
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["live_board/**", ".github/workflows/live-board.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-board
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Get the current site branch
+        run: |
+          if git fetch -q origin live-site; then
+            git worktree add -q /tmp/site FETCH_HEAD && git -C /tmp/site checkout -q -B live-site
+          else
+            git worktree add -q --orphan -b live-site /tmp/site
+          fi
+      - name: Find highlights
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python -m live_board.highlights /tmp/site/highlights.json | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Smoke test the page with real data (headless browser)
+        if: github.event_name == 'push'
+        run: |
+          cp /tmp/site/highlights.json live_board/site/highlights.json
+          pip install -q playwright==1.48.0 && python -m playwright install --with-deps chromium >/dev/null
+          mkdir -p /tmp/fx
+          u="https://site.api.espn.com/apis/site/v2/sports/soccer"
+          d=$(date -u -d yesterday +%Y%m%d)
+          for lg in uefa.champions eng.1 esp.1 ita.1 ger.1 fra.1 tur.1; do curl -s "$u/$lg/scoreboard?dates=$d" > /tmp/fx/$lg.json; done
+          read lg id < <(python3 -c "
+          import json
+          for lg in ['uefa.champions','eng.1','esp.1','ita.1','ger.1','fra.1','tur.1']:
+              e = sorted(json.load(open(f'/tmp/fx/{lg}.json')).get('events') or [], key=lambda x: x['date'])
+              if e: print(lg, e[0]['id']); break
+          ")
+          [ -n "$id" ] && curl -s "$u/$lg/summary?event=$id" > /tmp/fx/summary.json
+          python3 -c "import json;d=json.load(open('/tmp/fx/summary.json'));print('summary keys', list(d)[:12], 'keyEvents', len(d.get('keyEvents') or []), 'rosters', len(d.get('rosters') or []), 'hdr comps', len(((d.get('header') or {}).get('competitions') or [{}])[0].get('competitors') or []))" || true
+          echo "headless UA check: $(curl -s -o /dev/null -w '%{http_code}' -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/130.0.0.0 Safari/537.36' "$u/eng.1/scoreboard")"
+          python live_board/smoke.py
+      - name: Publish the site files
+        run: |
+          cp live_board/site/index.html /tmp/site/index.html
+          touch /tmp/site/.nojekyll
+          cd /tmp/site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || { git commit -qm "Live board update $(date -u +%FT%RZ)" && git push -q origin live-site; }
