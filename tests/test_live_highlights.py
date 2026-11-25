@@ -36,3 +36,23 @@ class HighlightMatchTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UploadsTest(unittest.TestCase):
+    def test_reads_playlist_pages(self):
+        import json as _j
+        from unittest import mock
+        from live_board import highlights as h
+        pages = [{"items": [{"snippet": {"title": "A v B | Highlights", "publishedAt": "2026-11-24T22:00:00Z",
+                                         "channelTitle": "X", "resourceId": {"videoId": "abc"}}}], "nextPageToken": "t"},
+                 {"items": [{"snippet": {"title": "old", "publishedAt": "2026-11-01T00:00:00Z",
+                                         "channelTitle": "X", "resourceId": {"videoId": "old"}}}], "nextPageToken": "t2"}]
+        calls = []
+        def fake(url, timeout=20):
+            calls.append(url)
+            return _j.dumps(pages[len(calls) - 1]).encode()
+        with mock.patch.object(h, "get", fake):
+            out = h.uploads("UCabcdefghijklmnopqrstuv", "k", "2026-11-20T00:00:00Z")
+        self.assertEqual(len(calls), 2)  # stops once uploads are older than the lookback
+        self.assertIn("playlistId=UUabcdefghijklmnopqrstuv", calls[0])
+        self.assertEqual(out[0]["url"], "https://www.youtube.com/watch?v=abc")

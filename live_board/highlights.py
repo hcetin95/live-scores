@@ -1,9 +1,9 @@
 """Find official YouTube highlights for finished games and write site/highlights.json.
 
-Runs hourly in GitHub Actions. No API key needed: it reads each official channel's
-public RSS feed (the 15 newest videos) and matches titles to finished ESPN games.
-If a YOUTUBE_API_KEY secret is set, games still missing after RSS are also searched
-with the YouTube Data API (restricted to the same official channels).
+Runs every 15 minutes in GitHub Actions. With a YOUTUBE_API_KEY secret it reads each
+official channel's last ~200 uploads (YouTube Data API, about 3,000 of the 10,000 free
+daily quota units). Without a key it falls back to the public RSS feed (15 newest videos).
+"updated" only changes when the results change, so quiet runs don't commit.
 
 Output: {"updated": iso, "items": {espn_event_id: {url, title, channel, published}}}
 """
@@ -149,21 +149,24 @@ def match(game: dict, videos: list[dict]) -> dict | None:
     return best[1] if best else None
 
 
-def api_search(game: dict, cids: list[str], key: str) -> dict | None:
-    for cid in cids:
-        q = urllib.parse.urlencode({"part": "snippet", "channelId": cid, "type": "video", "maxResults": 10,
-                                    "order": "date", "q": "highlights", "publishedAfter": game["kick"], "key": key})
-        try:
-            items = json.loads(get(f"https://www.googleapis.com/youtube/v3/search?{q}")).get("items") or []
-        except Exception as e:  # noqa: BLE001
-            print(f"YouTube API: {e}", file=sys.stderr)
-            return None
-        vids = [{"title": i["snippet"]["title"], "url": f"https://www.youtube.com/watch?v={i['id']['videoId']}",
-                 "published": i["snippet"]["publishedAt"], "channel": i["snippet"]["channelTitle"]} for i in items]
-        hit = match(game, vids)
-        if hit:
-            return hit
-    return None
+def uploads(cid: str, key: str, since: str, pages: int = 4) -> list[dict]:
+    """Recent uploads via the YouTube Data API (playlistItems costs 1 quota unit per 50 videos)."""
+    out, token = [], ""
+    for _ in range(pages):
+        q = {"part": "snippet", "playlistId": "UU" + cid[2:], "maxResults": 50, "key": key}
+        if token:
+            q["pageToken"] = token
+        data = json.loads(get("https://www.googleapis.com/youtube/v3/playlistItems?" + urllib.parse.urlencode(q)))
+        for i in data.get("items") or []:
+            sn = i.get("snippet") or {}
+            vid = (sn.get("resourceId") or {}).get("videoId")
+            if vid:
+                out.append({"title": sn.get("title", ""), "url": f"https://www.youtube.com/watch?v={vid}",
+                            "published": sn.get("publishedAt", ""), "channel": sn.get("channelTitle", "")})
+        token = data.get("nextPageToken")
+        if not token or (out and out[-1]["published"] < since):
+            break
+    return out
 
 
 def run(out_path: pathlib.Path, today: dt.date | None = None) -> dict:
@@ -177,27 +180,36 @@ def run(out_path: pathlib.Path, today: dt.date | None = None) -> dict:
     games = [g for g in finished_games(today) if g["id"] not in items]
     feeds: dict[str, list[dict]] = {}
     key = os.environ.get("YOUTUBE_API_KEY", "")
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=LOOKBACK_DAYS + 1)).strftime("%Y-%m-%dT%H:%M:%SZ")
     found = 0
     for g in games:
         cids = [c for c in (channel_id(h, cids_cache) for h in CHANNELS[g["slug"]]) if c]
         vids = []
         for c in cids:
             if c not in feeds:
-                try:
-                    feeds[c] = feed(c)
-                except Exception as e:  # noqa: BLE001
-                    print(f"feed {c}: {e}", file=sys.stderr)
-                    feeds[c] = []
+                feeds[c] = []
+                if key:
+                    try:
+                        feeds[c] = uploads(c, key, since)
+                    except Exception as e:  # noqa: BLE001
+                        print(f"YouTube API {c}: {e}", file=sys.stderr)
+                if not feeds[c]:
+                    try:
+                        feeds[c] = feed(c)
+                    except Exception as e:  # noqa: BLE001
+                        print(f"feed {c}: {e}", file=sys.stderr)
             vids += feeds[c]
-        hit = match(g, vids) or (api_search(g, cids, key) if key else None)
+        hit = match(g, vids)
         if hit:
             items[g["id"]] = {**hit, "kick": g["kick"]}
             found += 1
             print(f"found: {g['label']} -> {hit['title']}")
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=KEEP_DAYS)).isoformat()
     items = {k: v for k, v in items.items() if (v.get("kick") or v.get("published", "")) >= cutoff[:19]}
-    out = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "items": items,
-           "channels": cids_cache, "pending": [g["label"] for g in games if g["id"] not in items]}
+    pending = [g["label"] for g in games if g["id"] not in items]
+    same = items == prev.get("items") and pending == prev.get("pending") and cids_cache == prev.get("channels")
+    stamp = prev.get("updated") if same and prev.get("updated") else dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    out = {"updated": stamp, "items": items, "channels": cids_cache, "pending": pending}
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(out, ensure_ascii=False, indent=1))
     print(f"{len(games)} finished games without highlights checked, {found} found, {len(items)} total")
