@@ -110,6 +110,7 @@ function dayLabel(off){ if(off===0) return "Today"; if(off===-1) return "Yesterd
   const d=new Date(); d.setDate(d.getDate()+off); return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}); }
 function kick(iso){return new Date(iso).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});}
 function safeUrl(u){return typeof u==="string" && u.startsWith("https://") ? u : null;}
+function ytSearch(home, away){ return "https://www.youtube.com/results?search_query="+encodeURIComponent(`${home.team?.displayName||""} vs ${away.team?.displayName||""} highlights`); }
 
 function statusOf(comp){
   const st = comp.status||{}, t = st.type||{};
@@ -194,7 +195,7 @@ function render(failed){
     list.append(sec);
   }
   if(!shown) list.append(el("p","empty", filter==="live" ? "No games live right now." : filter==="mine" ? "None of your teams play on this day." : "No games on this day."));
-  list.append(el("p","note","Scores: ESPN, refreshed every 30 s during live games. Highlights: official YouTube channels, checked hourly."));
+  list.append(el("p","note","Scores: ESPN, refreshed every 30 s during live games. Highlights: official YouTube channels, checked every 15 minutes."));
 }
 
 function card(e, L){
@@ -208,7 +209,8 @@ function card(e, L){
   if(s.live||s.done){ sc.append(el("span",null,home.score??""), el("span",null,away.score??"")); }
   b.append(sc);
   const hl = highlights[e.id];
-  if(hl && safeUrl(hl.url)){ const a=el("a","hl","▶ Highlights · "+(hl.channel||"YouTube")); a.href=hl.url; a.target="_blank"; a.rel="noopener"; a.onclick=ev=>ev.stopPropagation(); b.append(a); }
+  const hlUrl = hl && safeUrl(hl.url);
+  if(hlUrl || s.done){ const a=el("a","hl", hlUrl ? "▶ Highlights · "+(hl.channel||"YouTube") : "▶ Find highlights on YouTube"); a.href=hlUrl||ytSearch(home, away); a.target="_blank"; a.rel="noopener"; a.onclick=ev=>ev.stopPropagation(); b.append(a); }
   b.onclick=()=>openSheet(e, L);
   return b;
 }
@@ -254,7 +256,7 @@ function drawSheet(d, failed){
   big.append(side(home), mid, side(away)); w.append(big);
   const hl=highlights[e.id];
   if(hl && safeUrl(hl.url)){ const a=el("a","watch"); a.href=hl.url; a.target="_blank"; a.rel="noopener"; a.append(el("b",null,"▶ "), document.createTextNode("Watch highlights · "+(hl.channel||"YouTube"))); w.append(a); }
-  else if(s.done){ w.append(el("p","note","Highlights aren't on YouTube yet. Checked every hour.")); }
+  else if(s.done){ const a=el("a","watch"); a.href=ytSearch(home, away); a.target="_blank"; a.rel="noopener"; a.append(el("b",null,"▶ "), document.createTextNode("Find highlights on YouTube")); w.append(a); w.append(el("p","note","The official video isn't matched yet, so this opens a YouTube search. Checked every 15 minutes.")); }
   else w.append(el("p","note","Where to watch: "+L.watch));
   if(failed){ w.append(el("p","err","Couldn't load match details.")); sh.append(w); return; }
   if(!d){ w.append(el("p","empty","Loading match details…")); sh.append(w); return; }
