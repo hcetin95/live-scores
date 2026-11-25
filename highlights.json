@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-25T19:52:19+00:00",
+ "updated": "2026-11-25T20:51:08+00:00",
  "items": {
   "401882802": {
    "title": "LEVANTE UD 1 - 1 ELCHE CF | RESUMEN LALIGA EA SPORTS",
@@ -210,6 +210,20 @@
    "published": "2026-11-22T18:15:17Z",
    "channel": "beIN SPORTS Türkiye",
    "kick": "2026-11-22T16:00Z"
+  },
+  "401915378": {
+   "title": "Sabah vs. Barcelona: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=lvclSsS88PE",
+   "published": "2026-11-25T19:53:38Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T17:45Z"
+  },
+  "401915293": {
+   "title": "Slavia Praha vs. Villarreal: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=_3Wv0FaAXm4",
+   "published": "2026-11-25T19:59:43Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T17:45Z"
   }
  },
  "matchday": {
@@ -233,8 +247,6 @@
   "Fenerbahce": "UCgqlho3-8a6FmDqQm7Q6gJw"
  },
  "pending": [
-  "Sabah FK v Barcelona",
-  "Slavia Prague v Villarreal",
   "Bodo/Glimt v LASK Linz",
   "Werder Bremen v Hamburg SV",
   "Erzurum BB v Goztepe"
