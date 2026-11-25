@@ -5,7 +5,8 @@ official channel's last ~200 uploads (YouTube Data API, about 3,000 of the 10,00
 daily quota units). Without a key it falls back to the public RSS feed (15 newest videos).
 "updated" only changes when the results change, so quiet runs don't commit.
 
-Output: {"updated": iso, "items": {espn_event_id: {url, title, channel, published}}}
+Output: {"updated": iso, "items": {espn_event_id: {url, title, channel, published, kick}},
+         "matchday": {"CL": {url, title, channel, published, round}}}  (newest all-goals video)
 """
 
 from __future__ import annotations
@@ -34,6 +35,9 @@ CHANNELS = {
     "fra.1": ["beINSPORTSUSA", "Ligue1"],
     "tur.1": ["beINSPORTSTurkiye", "Fenerbahce"],
 }
+# Channels for the "all goals of the matchday" compilation, in order of preference (US-friendly first).
+MATCHDAY_CHANNELS = {"CL": ["CBSSportsGolazo", "UEFA", "ChampionsLeague"]}
+MATCHDAY_KEEP_DAYS = 21
 KEEP_DAYS = 10
 LOOKBACK_DAYS = 3
 HL_WORDS = ("highlight", "ozet", "özet", "goals", "resumen", "all goals")
@@ -169,6 +173,49 @@ def uploads(cid: str, key: str, since: str, pages: int = 4) -> list[dict]:
     return out
 
 
+ROUND = re.compile(r"\b(?:matchday|md)\s*(\d{1,2})\b")
+
+
+def is_matchday_goals(title: str) -> bool:
+    t = f" {fold(title)} "
+    goals = any(w in t for w in (" all goals ", " all the goals ", " every goal ", " todos los goles "))
+    ucl = " ucl " in t or " champions league " in t
+    other = any(w in t for w in (" europa ", " conference ", " uwcl ", " women ", " youth "))
+    return goals and ucl and not other and bool(ROUND.search(t))
+
+
+def plays_in_us(vid_url: str, key: str) -> bool:
+    """True unless the YouTube API says the video is blocked in the US (needs a key; assume yes without)."""
+    if not key:
+        return True
+    vid = urllib.parse.parse_qs(urllib.parse.urlparse(vid_url).query).get("v", [""])[0]
+    q = urllib.parse.urlencode({"part": "contentDetails,status", "id": vid, "key": key})
+    try:
+        items = json.loads(get(f"https://www.googleapis.com/youtube/v3/videos?{q}")).get("items") or []
+    except Exception as e:  # noqa: BLE001
+        print(f"region check {vid}: {e}", file=sys.stderr)
+        return True
+    if not items:
+        return False
+    rr = (items[0].get("contentDetails") or {}).get("regionRestriction") or {}
+    if (items[0].get("status") or {}).get("privacyStatus", "public") != "public":
+        return False
+    if "allowed" in rr:
+        return "US" in rr["allowed"]
+    return "US" not in rr.get("blocked", [])
+
+
+def pick_matchday(videos: list[dict], key: str) -> dict | None:
+    """Newest all-goals compilation that plays in the US."""
+    cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=MATCHDAY_KEEP_DAYS)).strftime("%Y-%m-%dT%H:%M:%S")
+    cands = sorted((v for v in videos if is_matchday_goals(v["title"]) and v["published"][:19] >= cutoff),
+                   key=lambda v: v["published"], reverse=True)
+    for v in cands[:3]:
+        if plays_in_us(v["url"], key):
+            return {**v, "round": int(ROUND.search(fold(v["title"])).group(1))}
+    return None
+
+
 def run(out_path: pathlib.Path, today: dt.date | None = None) -> dict:
     today = today or dt.datetime.now(dt.timezone.utc).date()
     try:
@@ -182,34 +229,54 @@ def run(out_path: pathlib.Path, today: dt.date | None = None) -> dict:
     key = os.environ.get("YOUTUBE_API_KEY", "")
     since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=LOOKBACK_DAYS + 1)).strftime("%Y-%m-%dT%H:%M:%SZ")
     found = 0
+    def videos(c: str) -> list[dict]:
+        if c not in feeds:
+            feeds[c] = []
+            if key:
+                try:
+                    feeds[c] = uploads(c, key, since)
+                except Exception as e:  # noqa: BLE001
+                    print(f"YouTube API {c}: {e}", file=sys.stderr)
+            if not feeds[c]:
+                try:
+                    feeds[c] = feed(c)
+                except Exception as e:  # noqa: BLE001
+                    print(f"feed {c}: {e}", file=sys.stderr)
+        return feeds[c]
+
     for g in games:
         cids = [c for c in (channel_id(h, cids_cache) for h in CHANNELS[g["slug"]]) if c]
-        vids = []
-        for c in cids:
-            if c not in feeds:
-                feeds[c] = []
-                if key:
-                    try:
-                        feeds[c] = uploads(c, key, since)
-                    except Exception as e:  # noqa: BLE001
-                        print(f"YouTube API {c}: {e}", file=sys.stderr)
-                if not feeds[c]:
-                    try:
-                        feeds[c] = feed(c)
-                    except Exception as e:  # noqa: BLE001
-                        print(f"feed {c}: {e}", file=sys.stderr)
-            vids += feeds[c]
+        vids = [v for c in cids for v in videos(c)]
         hit = match(g, vids)
         if hit:
             items[g["id"]] = {**hit, "kick": g["kick"]}
             found += 1
             print(f"found: {g['label']} -> {hit['title']}")
+    matchday = dict(prev.get("matchday") or {})
+    for comp, handles in MATCHDAY_CHANNELS.items():
+        got = None
+        for h in handles:  # first channel with a compilation wins (CBS Golazo is US-licensed)
+            c = channel_id(h, cids_cache)
+            if c:
+                vs = videos(c)
+                for v in vs:  # log near-misses so title-format changes are easy to spot
+                    t = fold(v["title"])
+                    if "goal" in t and ("ucl" in t or "champions league" in t) and "highlights" not in t:
+                        print(f"  matchday candidate @{h}: {v['title']} ({'ok' if is_matchday_goals(v['title']) else 'no'})")
+                got = pick_matchday(vs, key)
+                if got:
+                    break
+        old = matchday.get(comp)  # keep the previous matchday's video until a newer one appears
+        if got and (not old or got["published"] > old.get("published", "")):
+            matchday[comp] = got
+            print(f"matchday {comp}: {got['title']}")
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=KEEP_DAYS)).isoformat()
     items = {k: v for k, v in items.items() if (v.get("kick") or v.get("published", "")) >= cutoff[:19]}
     pending = [g["label"] for g in games if g["id"] not in items]
-    same = items == prev.get("items") and pending == prev.get("pending") and cids_cache == prev.get("channels")
+    same = (items == prev.get("items") and pending == prev.get("pending") and cids_cache == prev.get("channels")
+            and matchday == (prev.get("matchday") or {}))
     stamp = prev.get("updated") if same and prev.get("updated") else dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
-    out = {"updated": stamp, "items": items, "channels": cids_cache, "pending": pending}
+    out = {"updated": stamp, "items": items, "matchday": matchday, "channels": cids_cache, "pending": pending}
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(out, ensure_ascii=False, indent=1))
     print(f"{len(games)} finished games without highlights checked, {found} found, {len(items)} total")

@@ -56,3 +56,24 @@ class UploadsTest(unittest.TestCase):
         self.assertEqual(len(calls), 2)  # stops once uploads are older than the lookback
         self.assertIn("playlistId=UUabcdefghijklmnopqrstuv", calls[0])
         self.assertEqual(out[0]["url"], "https://www.youtube.com/watch?v=abc")
+
+
+class MatchdayTest(unittest.TestCase):
+    def test_title_rules(self):
+        from live_board import highlights as h
+        self.assertTrue(h.is_matchday_goals("ALL GOALS | UCL Matchday 5 | CBS Sports Golazo"))
+        self.assertTrue(h.is_matchday_goals("Every Goal from Champions League MD5!"))
+        self.assertFalse(h.is_matchday_goals("ALL GOALS | UEL Matchday 5 Europa League"))
+        self.assertFalse(h.is_matchday_goals("Arsenal vs. Dortmund: Extended Highlights | UCL League Phase MD 5"))
+        self.assertFalse(h.is_matchday_goals("All goals | UWCL Matchday 3 Champions League"))
+
+    def test_picks_newest_and_reads_round(self):
+        import datetime as dt
+        from live_board import highlights as h
+        now = dt.datetime.now(dt.timezone.utc)
+        iso = lambda d: (now - dt.timedelta(days=d)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        vids = [{"title": "ALL GOALS | UCL Matchday 4", "url": "https://www.youtube.com/watch?v=a", "published": iso(14), "channel": "C"},
+                {"title": "ALL GOALS | UCL Matchday 5", "url": "https://www.youtube.com/watch?v=b", "published": iso(1), "channel": "C"},
+                {"title": "Old | UCL Matchday 1 all goals", "url": "https://www.youtube.com/watch?v=c", "published": iso(60), "channel": "C"}]
+        got = h.pick_matchday(vids, "")
+        self.assertEqual((got["url"][-1], got["round"]), ("b", 5))
