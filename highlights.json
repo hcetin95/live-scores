@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-25T04:29:58+00:00",
+ "updated": "2026-11-25T04:50:33+00:00",
  "items": {
   "401882802": {
    "title": "LEVANTE UD 1 - 1 ELCHE CF | RESUMEN LALIGA EA SPORTS",
@@ -210,6 +210,15 @@
    "published": "2026-11-22T18:15:17Z",
    "channel": "beIN SPORTS Türkiye",
    "kick": "2026-11-22T16:00Z"
+  }
+ },
+ "matchday": {
+  "CL": {
+   "title": "ALL GOALS in MD5 of the UEFA Champions League: November 24, 2026",
+   "url": "https://www.youtube.com/watch?v=3CPGRx7GGpI",
+   "published": "2026-11-25T00:30:02Z",
+   "channel": "CBS Sports Golazo",
+   "round": 5
   }
  },
  "channels": {
