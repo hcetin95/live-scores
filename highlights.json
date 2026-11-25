@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-25T22:50:21+00:00",
+ "updated": "2026-11-25T23:45:36+00:00",
  "items": {
   "401882802": {
    "title": "LEVANTE UD 1 - 1 ELCHE CF | RESUMEN LALIGA EA SPORTS",
@@ -266,13 +266,20 @@
    "published": "2026-11-25T22:26:13Z",
    "channel": "CBS Sports Golazo",
    "kick": "2026-11-25T20:00Z"
+  },
+  "401915375": {
+   "title": "Shakhtar Donetsk vs. Fenerbahçe: Extended Highlights | UCL League Phase MD 5 | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=1gCOaaU1Ao4",
+   "published": "2026-11-25T23:19:05Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-25T20:00Z"
   }
  },
  "matchday": {
   "CL": {
-   "title": "ALL GOALS in MD5 of the UEFA Champions League: November 24, 2026",
-   "url": "https://www.youtube.com/watch?v=3CPGRx7GGpI",
-   "published": "2026-11-25T00:30:02Z",
+   "title": "ALL GOALS in MD5 of the UEFA Champions League: November 25, 2026",
+   "url": "https://www.youtube.com/watch?v=adcMUYPdbIk",
+   "published": "2026-11-25T23:00:30Z",
    "channel": "CBS Sports Golazo",
    "round": 5
   }
@@ -289,7 +296,6 @@
   "Fenerbahce": "UCgqlho3-8a6FmDqQm7Q6gJw"
  },
  "pending": [
-  "Shakhtar Donetsk v Fenerbahce",
   "Bodo/Glimt v LASK Linz",
   "Werder Bremen v Hamburg SV",
   "Erzurum BB v Goztepe"
