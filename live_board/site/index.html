@@ -91,7 +91,7 @@ main{padding-block:12px 40px;display:flex;flex-direction:column;gap:16px}
 const API = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 const LEAGUES = [
   {slug:"uefa.champions", name:"Champions League", c:"#1d4ed8", watch:"Paramount+ ✓"},
-  {slug:"eng.1", name:"Premier League", c:"#7c3aed", watch:"Peacock ✓"},
+  {slug:"eng.1", name:"Premier League", c:"#7c3aed", watch:"Peacock, NBC or USA Network (varies by game)"},
   {slug:"esp.1", name:"La Liga", c:"#ef4444", watch:"ESPN+"},
   {slug:"ita.1", name:"Serie A", c:"#0ea5e9", watch:"Paramount+ ✓"},
   {slug:"ger.1", name:"Bundesliga", c:"#dc2626", watch:"Fandango (USA Network) ✓"},
@@ -110,6 +110,17 @@ function dayLabel(off){ if(off===0) return "Today"; if(off===-1) return "Yesterd
   const d=new Date(); d.setDate(d.getDate()+off); return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}); }
 function kick(iso){return new Date(iso).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});}
 function safeUrl(u){return typeof u==="string" && u.startsWith("https://") ? u : null;}
+/* Per-game US TV from ESPN (geoBroadcasts / broadcasts); league default only as a fallback. */
+const TV_NOTE = {"peacock":"Peacock ✓","nbc":"NBC ✓","tele":"Telemundo (Spanish, also on Peacock ✓)","telemundo":"Telemundo (Spanish, also on Peacock ✓)",
+  "usa net":"USA Network (replay on Peacock next day)","usa network":"USA Network (replay on Peacock next day)","fandango":"Fandango (free) ✓",
+  "paramount+":"Paramount+ ✓","cbs":"CBS ✓","universo":"Universo"};
+function tvOf(e, L){
+  const comp=(e.competitions||[{}])[0]; const names=[];
+  for(const g of comp.geoBroadcasts||[]){ const r=(g.region||g.market?.region||"us").toString().toLowerCase(); const n=g.media?.shortName||g.media?.name; if(n && r==="us" && !names.includes(n)) names.push(n); }
+  if(!names.length) for(const b of comp.broadcasts||[]) for(const n of b.names||[]) if(!names.includes(n)) names.push(n);
+  if(!names.length) return L.watch;
+  return names.map(n=>TV_NOTE[n.toLowerCase()]||n).join(" · ");
+}
 function ytSearch(home, away){ return "https://www.youtube.com/results?search_query="+encodeURIComponent(`${home.team?.displayName||""} vs ${away.team?.displayName||""} highlights`); }
 
 function statusOf(comp){
@@ -257,7 +268,7 @@ function drawSheet(d, failed){
   const hl=highlights[e.id];
   if(hl && safeUrl(hl.url)){ const a=el("a","watch"); a.href=hl.url; a.target="_blank"; a.rel="noopener"; a.append(el("b",null,"▶ "), document.createTextNode("Watch highlights · "+(hl.channel||"YouTube"))); w.append(a); }
   else if(s.done){ const a=el("a","watch"); a.href=ytSearch(home, away); a.target="_blank"; a.rel="noopener"; a.append(el("b",null,"▶ "), document.createTextNode("Find highlights on YouTube")); w.append(a); w.append(el("p","note","The official video isn't matched yet, so this opens a YouTube search. Checked every 15 minutes.")); }
-  else w.append(el("p","note","Where to watch: "+L.watch));
+  else w.append(el("p","note","Where to watch: "+tvOf(e, L)));
   if(failed){ w.append(el("p","err","Couldn't load match details.")); sh.append(w); return; }
   if(!d){ w.append(el("p","empty","Loading match details…")); sh.append(w); return; }
 
