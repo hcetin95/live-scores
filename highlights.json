@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-25T23:45:36+00:00",
+ "updated": "2026-11-26T00:59:46+00:00",
  "items": {
   "401882802": {
    "title": "LEVANTE UD 1 - 1 ELCHE CF | RESUMEN LALIGA EA SPORTS",
@@ -277,9 +277,9 @@
  },
  "matchday": {
   "CL": {
-   "title": "ALL GOALS in MD5 of the UEFA Champions League: November 25, 2026",
-   "url": "https://www.youtube.com/watch?v=adcMUYPdbIk",
-   "published": "2026-11-25T23:00:30Z",
+   "title": "ALL GOALS in MD5 of the UEFA Champions League",
+   "url": "https://www.youtube.com/watch?v=jsk-U5KXo4c",
+   "published": "2026-11-26T00:00:16Z",
    "channel": "CBS Sports Golazo",
    "round": 5
   }
@@ -296,8 +296,6 @@
   "Fenerbahce": "UCgqlho3-8a6FmDqQm7Q6gJw"
  },
  "pending": [
-  "Bodo/Glimt v LASK Linz",
-  "Werder Bremen v Hamburg SV",
-  "Erzurum BB v Goztepe"
+  "Bodo/Glimt v LASK Linz"
  ]
 }
