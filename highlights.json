@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-27T21:50:45+00:00",
+ "updated": "2026-11-27T22:51:53+00:00",
  "items": {
   "401882802": {
    "title": "LEVANTE UD 1 - 1 ELCHE CF | RESUMEN LALIGA EA SPORTS",
@@ -294,6 +294,34 @@
    "published": "2026-11-27T21:43:57Z",
    "channel": "Bundesliga",
    "kick": "2026-11-27T19:30Z"
+  },
+  "401875004": {
+   "title": "Venezia vs. Bologna: Extended Highlights | Serie A | CBS Sports Golazo",
+   "url": "https://www.youtube.com/watch?v=_ExjIxjDz_k",
+   "published": "2026-11-27T22:13:46Z",
+   "channel": "CBS Sports Golazo",
+   "kick": "2026-11-27T19:45Z"
+  },
+  "401879225": {
+   "title": "Nottingham Forest v. Chelsea | PREMIER LEAGUE HIGHLIGHTS | 11/27/2026",
+   "url": "https://www.youtube.com/watch?v=SqIUZDGAvXM",
+   "published": "2026-11-27T22:44:02Z",
+   "channel": "NBC Sports",
+   "kick": "2026-11-27T20:00Z"
+  },
+  "401882791": {
+   "title": "Levante vs. Racing Santander | LALIGA Highlights | ESPN FC",
+   "url": "https://www.youtube.com/watch?v=pBaPRCrEpgw",
+   "published": "2026-11-27T22:12:25Z",
+   "channel": "ESPN FC",
+   "kick": "2026-11-27T20:00Z"
+  },
+  "401876392": {
+   "title": "Stade Brest vs Paris FC | HIGHLIGHTS | Ligue 1 | 11/27/2026 | beIN SPORTS USA",
+   "url": "https://www.youtube.com/watch?v=eUyKCn7IjZU",
+   "published": "2026-11-27T22:13:32Z",
+   "channel": "beIN SPORTS USA",
+   "kick": "2026-11-27T19:45Z"
   }
  },
  "matchday": {
@@ -317,8 +345,6 @@
   "Fenerbahce": "UCgqlho3-8a6FmDqQm7Q6gJw"
  },
  "pending": [
-  "Bodo/Glimt v LASK Linz",
-  "Venezia v Bologna",
-  "Brest v Paris FC"
+  "Bodo/Glimt v LASK Linz"
  ]
 }
