@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-26T00:59:46+00:00",
+ "updated": "2026-11-27T21:50:45+00:00",
  "items": {
   "401882802": {
    "title": "LEVANTE UD 1 - 1 ELCHE CF | RESUMEN LALIGA EA SPORTS",
@@ -287,6 +287,13 @@
    "published": "2026-11-27T19:41:24Z",
    "channel": "beIN SPORTS Türkiye",
    "kick": "2026-11-27T17:00Z"
+  },
+  "401884720": {
+   "title": "Füllkrug Does It AGAIN! | WERDER BREMEN - BORUSSIA M'GLADBACH | Highlights | MD 11 – Bundesliga",
+   "url": "https://www.youtube.com/watch?v=hPq2fZNXbuc",
+   "published": "2026-11-27T21:43:57Z",
+   "channel": "Bundesliga",
+   "kick": "2026-11-27T19:30Z"
   }
  },
  "matchday": {
@@ -310,6 +317,8 @@
   "Fenerbahce": "UCgqlho3-8a6FmDqQm7Q6gJw"
  },
  "pending": [
-  "Bodo/Glimt v LASK Linz"
+  "Bodo/Glimt v LASK Linz",
+  "Venezia v Bologna",
+  "Brest v Paris FC"
  ]
 }
